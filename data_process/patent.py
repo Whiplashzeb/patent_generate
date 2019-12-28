@@ -1,6 +1,6 @@
+import bs4
 from bs4 import BeautifulSoup
 import re
-import json
 
 
 class PatentDes:
@@ -11,7 +11,8 @@ class PatentDes:
         """
         self.des_file = des_file
         self.soup = BeautifulSoup(open(self.des_file), 'html.parser')
-        self.chinese = self.soup.chinese.get_text()
+        self.chinese = self.soup.chinese
+        self.chinese_text = self._math_process()
 
         self.number = ""
         self.title = ""
@@ -20,6 +21,29 @@ class PatentDes:
         self.invention_content = ""
         self.drawings = ""
         self.implementation = ""
+
+    def _math_process(self):
+        """
+        处理其中的数学公式
+        """
+        subs = self.chinese.find_all("sub")
+        for sub in subs:
+            sub.string.replace_with("@@_(" + sub.string.strip() + ")@@")
+
+        sups = self.chinese.find_all("sub")
+        for sup in sups:
+            sup.string.replace_with("@@^(" + sup.string.strip() + ")@@")
+
+        maths = self.chinese.find_all("maths")
+        for math in maths:
+            for content in math.descendants:
+                if isinstance(content, bs4.element.Tag) and content.string is not None:
+                    content.string.replace_with(content.string.strip())
+                    if content.string != "":
+                        content.string = content.string + "@@"
+
+        chinese_text = "\n".join(self.chinese.stripped_strings).replace("\n@@", "").replace("@@\n", "")
+        return chinese_text
 
     def _get_number(self):
         """
@@ -39,3 +63,8 @@ class PatentDes:
         获取技术领域
         """
         technical_field = list()
+        technical = ""
+        if self.chinese.find("技术背景") != -1:
+            technical_field = re.findall("[技术领域|发明领域].*技术背景", self.chinese, re.DOTALL)
+        elif self.chinese.find("背景技术") != -1:
+            technical_field = re.findall("[技术领域|]")
