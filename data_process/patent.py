@@ -129,7 +129,7 @@ class PatentClaim:
         self._math_process()
         self.claims = self.chinese.find_all("p")
 
-        self.keys = ["特征在于", "特征是", "包括", "其中", "其特长"]
+        self.keys = ["其特征在于", "特征在于", "其特征是", "特征是", "包括", "其中", "其特长", "流程如下", "其步骤为", "步骤中", "对象为"]
         self.pattern = "[" + "|".join(self.keys) + "]"
 
         self.number = self._get_number()
@@ -168,34 +168,55 @@ class PatentClaim:
         """
         获取独立权利要求
         """
+        sentence_split = re.compile(r'[,;，；：！？｡。!?:]')
         for claim in self.claims:
             if claim["claim"] == "independent":
                 preamble = ""
                 characterizing = ""
                 content = "\n".join(claim.stripped_strings).replace_with("\n@@", "").replace_with("@@\n", "")
-                independent = re.split(self.pattern, content, maxsplit=1, flags=re.DOTALL)
-                if len(independent) == 2:
-                    preamble, characterizing = independent[0], independent[1]
-                elif len(independent) == 1:
-                    preamble = independent[0]
+                for key in self.keys:
+                    if key in content:
+                        independent = content.split(key, 1)
+                        preamble = independent[0]
+                        characterizing = independent[1]
+                        break
+                if preamble == "" and characterizing == "":
+                    if "：" in content and len(sentence_split.findall(content.split("：", 1)[0])) < 3:
+                        preamble = content.split("：", 1)[0]
+                        characterizing = content.split("：", 1)[1]
+                    elif ":" in content and len(sentence_split.findall(content.split(":", 1)[0])) < 3:
+                        preamble = content.split(":", 1)[0]
+                        characterizing = content.split(":", 1)[1]
+                    else:
+                        characterizing = content
                 self.independent.append([preamble, characterizing])
 
     def _get_dependent(self):
         """
         获取从属权利要求
         """
+        sentence_split = re.compile(r'[,;，；：！？｡。!?:]')
         for claim in self.claims:
             if claim["claim"] == "dependent":
-                preamble = ""
-                characterizing = ""
+                reference = ""
+                limited = ""
                 content = "\n".join(claim.stripped_strings).replace_with("\n@@", "").replace_with("@@\n", "")
-                dependent = re.split(self.pattern, content, maxsplit=1, flags=re.DOTALL)
-                if len(dependent) == 2:
-                    preamble, characterizing = dependent[0], dependent[1]
-                elif len(dependent) == 1:
-                    preamble = dependent[0]
-                self.dependent.append([preamble, characterizing])
-
+                for key in self.keys:
+                    if key in content:
+                        dependent = content.split(key, 1)
+                        reference = dependent[0]
+                        limited = dependent[1]
+                        break
+                if reference == "" and limited == "":
+                    if "：" in content and len(sentence_split.findall(content.split("：", 1)[0])) < 3:
+                        reference = content.split("：", 1)[0]
+                        limited = content.split("：", 1)[1]
+                    elif ":" in content and len(sentence_split.findall(content.split(":", 1)[0])) < 3:
+                        reference = content.split(":", 1)[0]
+                        limited = content.split(":", 1)[1]
+                    else:
+                        limited = content
+                self.dependent.append([reference, limited])
 
     def get_json(self):
         """
@@ -205,4 +226,4 @@ class PatentClaim:
         claim_json["number"] = self.number
         claim_json["independent"] = self.independent
         claim_json["dependent"] = self.dependent
-
+        return claim_json
