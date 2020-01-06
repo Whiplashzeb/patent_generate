@@ -83,6 +83,8 @@ class PatentDes:
         pattern = "(" + "|".join(keywords_list[0]) + ")" + ".*?" + "("
         for keywords in keywords_list[1:]:
             pattern += "|".join(keywords)
+            if len(keywords) == 1:
+                pattern += "|"
         pattern += ")"
         return pattern
 
@@ -111,12 +113,12 @@ class PatentDes:
         re_field = re.search(pattern, self.chinese_text, re.DOTALL)
 
         if re_field is None:
-            return pattern
+            return field
 
         field = re_field.group()
         match_keys = re_field.groups()
 
-        replace_pattern = "(" + "|".join(match_keys) + "|".join(self.special_char) + ")"
+        replace_pattern = "(" + "|".join(match_keys) + "|" + "|".join(self.special_char) + ")"
         field = re.sub(replace_pattern, "", field).strip()
 
         return field
@@ -163,51 +165,48 @@ class PatentClaim:
         """
         处理其中的数学公式
         """
+        us = self.chinese.find_all("u")
+        for u in us:
+            if u.string is not None:
+                u.string.replace_with("_" + u.string.strip() + "_")
 
-        def _math_process(self):
-            """
-            处理其中的数学公式
-            """
-            us = self.chinese.find_all("u")
-            for u in us:
-                if u.string is not None:
-                    u.string.replace_with("_" + u.string.strip() + "_")
-
-            subs = self.chinese.find_all("sub")
-            for sub in subs:
-                if sub.string is None:
-                    for content in sub.descendants:
-                        if isinstance(content, bs4.element.Tag) and content.string is not None:
-                            content.string.replace_with(content.string.strip())
-                            if content.string != "":
-                                content.string = "@@_(" + content.string + ")@@"
-                else:
-                    sub.string.replace_with("@@_(" + sub.string.strip() + ")@@")
-
-            sups = self.chinese.find_all("sub")
-            for sup in sups:
-                if sup.string is None:
-                    for content in sup.descendants:
-                        if isinstance(content, bs4.element.Tag) and content.string is not None:
-                            content.string.replace_with(content.string.strip())
-                            if content.string != "":
-                                content.string = "@@^(" + content.string + ")@@"
-                else:
-                    sup.string.replace_with("@@^(" + sup.string.strip() + ")@@")
-
-            maths = self.chinese.find_all("maths")
-            for math in maths:
-                for content in math.descendants:
+        subs = self.chinese.find_all("sub")
+        for sub in subs:
+            if sub.string is None:
+                for content in sub.descendants:
                     if isinstance(content, bs4.element.Tag) and content.string is not None:
                         content.string.replace_with(content.string.strip())
                         if content.string != "":
-                            content.string = content.string + "@@"
+                            content.string = "@@_(" + content.string + ")@@"
+            else:
+                sub.string.replace_with("@@_(" + sub.string.strip() + ")@@")
+
+        sups = self.chinese.find_all("sub")
+        for sup in sups:
+            if sup.string is None:
+                for content in sup.descendants:
+                    if isinstance(content, bs4.element.Tag) and content.string is not None:
+                        content.string.replace_with(content.string.strip())
+                        if content.string != "":
+                            content.string = "@@^(" + content.string + ")@@"
+            else:
+                sup.string.replace_with("@@^(" + sup.string.strip() + ")@@")
+
+        maths = self.chinese.find_all("maths")
+        for math in maths:
+            for content in math.descendants:
+                if isinstance(content, bs4.element.Tag) and content.string is not None:
+                    content.string.replace_with(content.string.strip())
+                    if content.string != "":
+                        content.string = content.string + "@@"
+
 
     def _get_number(self):
         """
         获取专利号
         """
         return self.soup.title.string.strip()[2:]
+
 
     def _get_independent(self):
         """
@@ -236,6 +235,7 @@ class PatentClaim:
                         characterizing = content
                 self.independent.append([preamble, characterizing])
 
+
     def _get_dependent(self):
         """
         获取从属权利要求
@@ -262,6 +262,7 @@ class PatentClaim:
                     else:
                         limited = content
                 self.dependent.append([reference, limited])
+
 
     def get_json(self):
         """
