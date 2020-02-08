@@ -1,46 +1,43 @@
 import os
 import json
+from patent import Patent
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from data_process.patent import PatentDes, PatentClaim
 
 claim_dir = "../../patent_data/claim/"
 des_dir = "../../patent_data/des/"
-claim_json_dir = "../../patent_data/claim_json/"
-des_json_dir = "../../patent_data/des_json/"
-
+json_dir = "../../patent_data/json/"
 
 def create_json(file_list):
     for file_name in file_list:
         des_file = os.path.join(des_dir, file_name)
-        des = PatentDes(des_file)
-        des_json = des.get_json()
-
         claim_file = os.path.join(claim_dir, file_name)
-        claim = PatentClaim(claim_file)
-        claim_json = claim.get_json()
 
-        number = des_json["number"]
-        if des_json["title"] != "" and des_json["invention_content"] != "" and claim_json["independent"] != []:
-            json_file_name = "%s.json" % number
+        patent = Patent(des_file, claim_file, 0.8)
+        patent_json = patent.get_json()
 
-            des_json_file = os.path.join(des_json_dir, json_file_name)
-            with open(des_json_file, "w") as fp:
-                des_string = json.dumps(des_json)
-                fp.write(des_string)
+        number = patent_json["number"]
+        if patent_json["title"] == "" or patent_json["invention_content"] == "" or patent_json["independent"] == []:
+            print(number)
+            continue
 
-            claim_json_file = os.path.join(claim_json_dir, json_file_name)
-            with open(claim_json_file, "w") as fp:
-                claim_string = json.dumps(claim_json)
-                fp.write(claim_string)
+        json_file_name = "%s.json" % number
+        json_file = os.path.join(json_dir, json_file_name)
+        with open(json_file, "w") as fp:
+            patent_string = json.dumps(patent_json)
+            fp.write(patent_string)
+
 
 
 if __name__ == "__main__":
     file_list = os.listdir(des_dir)
-    with ProcessPoolExecutor(48) as exe:
+
+    process_count = 48
+    with ProcessPoolExecutor(process_count) as executor:
+        shard_size = len(file_list) // process_count + 1
         i = 0
         fs = []
         while i < len(file_list):
-            fs.append(exe.submit(create_json, file_list[i:i + 2000]))
-            i += 2000
+            fs.append(executor.submit(create_json, file_list[i:i+shard_size]))
+            i += shard_size
         for future in as_completed(fs):
             result = future.result()
