@@ -36,7 +36,7 @@ class Rouge:
           metrics: What ROUGE score to compute. Available: ROUGE-N, ROUGE-L, ROUGE-W. Default: ROUGE-N
           max_n: N-grams for ROUGE-N if specify. Default:1
           limit_length: If the summaries must be truncated. Defaut:True
-          length_limit: Number of the truncation where the unit is express int length_limit_Type. Default:665 (bytes) 
+          length_limit: Number of the truncation where the unit is express int length_limit_Type. Default:665 (bytes)
           length_limit_type: Unit of length_limit. Available: words, bytes. Default: 'bytes'
           apply_avg: If we should average the score of multiple samples. Default: True. If apply_Avg & apply_best = False, then each ROUGE scores are independant
           apply_best: Take the best instead of the average. Default: False, then each ROUGE scores are independant
@@ -780,13 +780,13 @@ class Rouge:
         return final_sentences
 
 
-hypothesis_file = "../test_result/pred.txt"
-reference_file = "../../../patent_data/summary/test.tgt"
+hypothesis_file = "../../test_result/reuse_copy_attn_loss_rnn_256_pred.txt"
+reference_file = "../../../../patent_data/summary/test.tgt"
 
 def prepare_results(m, p, r, f):
     return '\t{}:\t{}: {:5.2f}\t{}: {:5.2f}\t{}: {:5.2f}'.format(m, 'P', 100.0 * p, 'R', 100.0 * r, 'F1', 100.0 * f)
 
-for aggregator in ['Avg', 'Best']:
+for aggregator in ['Avg']:
     print('Evaluation with {}'.format(aggregator))
     apply_avg = aggregator == 'Avg'
     apply_best = aggregator == 'Best'
