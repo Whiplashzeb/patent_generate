@@ -2,12 +2,12 @@ export GLUE_DIR=../../patent_data/augment_data
 export CUDA_VISIBLE_DEVICES=1
 
 python eval.py \
-      --model_name bertatt \
+      --model_name bertdpcnn \
       --data_dir $GLUE_DIR/ \
       --pretrain_model_path  ../pretrain_model/bert-base-chinese/ \
-      --output_dir ../models/att_model/ \
-      --best_dir ../models/att_model/best_model/ \
-      --predict_dir ../models/att_model/predict/ \
+      --output_dir ../models/dpcnn_model/ \
+      --best_dir ../models/dpcnn_model/best_model/ \
+      --predict_dir ../models/dpcnn_model/predict/ \
       --max_seq_length 128 \
       --do_test \
       --evaluate_during_training \

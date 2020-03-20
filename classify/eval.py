@@ -2,6 +2,8 @@ from models.BertBase import BertBase
 from models.BertLSTM import BertLSTM
 from models.BertCNN import BertCNN
 from models.BertATT import BertATT
+from models.BertDPCNN import BertDPCNN
+from models.BertRCNN import BertRCNN
 from models.bertbase_args import get_parse
 from utils import set_seed, evaluate
 
@@ -46,6 +48,10 @@ if __name__ == "__main__":
         model = BertCNN.from_pretrained(args.best_dir, n_filters=256, filter_sizes=[1, 2, 3, 4, 5, 6, 7, 8, 9])
     elif args.model_name == "bertatt":
         model = BertATT.from_pretrained(args.best_dir)
+    elif args.model_name == "bertrcnn":
+        model = BertRCNN.from_pretrained(args.best_dir, rnn_hidden_size=512, layers=2, dropout=0.2)
+    elif args.model_name == "bertdpcnn":
+        model = BertDPCNN.from_pretrained(args.best_dir, filter_num=256)
     model.to(args.device)
 
     logger.info("Training/Evaluation parameters %s", args)

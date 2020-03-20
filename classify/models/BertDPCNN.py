@@ -20,7 +20,7 @@ class BertDPCNN(BertPreTrainedModel):
         self.padding_conv = nn.ZeroPad2d((0, 0, 1, 1))
         self.padding_pool = nn.ZeroPad2d((0, 0, 0, 1))
         self.act_fn = nn.ReLU()
-        self.classifier = nn.Linear(filter_num, config.num_labels)
+        self.classifier = nn.Linear(config.hidden_size + filter_num, config.num_labels)
 
         self.init_weights()
 
@@ -47,6 +47,8 @@ class BertDPCNN(BertPreTrainedModel):
         last_hidden_states = self.dropout(last_hidden_states)
         last_hidden_states = last_hidden_states.unsqueeze(1)
 
+        pooled_output = outputs[1]
+
         x = self.conv_region(last_hidden_states)
         x = self.padding_conv(x)
         x = self.act_fn(x)
@@ -61,7 +63,9 @@ class BertDPCNN(BertPreTrainedModel):
 
         x = x.squeeze()
 
-        logits = self.classifier(x)
+        feature = torch.cat([pooled_output, x], dim=-1)
+
+        logits = self.classifier(feature)
         outputs = (logits,) + outputs[2:]
 
         if labels is not None:

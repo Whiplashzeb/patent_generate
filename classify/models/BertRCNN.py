@@ -31,7 +31,7 @@ class BertRCNN(BertPreTrainedModel):
         self.rnn = nn.LSTM(config.hidden_size, rnn_hidden_size, layers, bidirectional=True, dropout=dropout, batch_first=True)
         self.W = Linear(config.hidden_size + 2 * rnn_hidden_size, config.hidden_size)
 
-        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.classifier = nn.Linear(config.hidden_size * 2, config.num_labels)
 
         self.init_weights()
 
@@ -57,13 +57,17 @@ class BertRCNN(BertPreTrainedModel):
         last_hidden_states = outputs[0]
         last_hidden_states = self.dropout(last_hidden_states)
 
+        pooled_output = outputs[1]
+
         rnn_output, _ = self.rnn(last_hidden_states)
 
         x = torch.cat((rnn_output, last_hidden_states), 2)
         y = torch.tanh(self.W(x)).permute(0, 2, 1)
         y = F.max_pool1d(y, y.size()[2]).squeeze(2)
 
-        logits = self.classifier(y)
+        feature = torch.cat([pooled_output, y], dim=-1)
+
+        logits = self.classifier(feature)
         outputs = (logits,) + outputs[2:]
 
         if labels is not None:

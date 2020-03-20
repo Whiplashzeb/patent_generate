@@ -2,12 +2,12 @@ export GLUE_DIR=../../patent_data/classify/augment_data
 export CUDA_VISIBLE_DEVICES=0
 
 python eval.py \
-      --model_name bertcnn \
+      --model_name bertrcnn \
       --data_dir $GLUE_DIR/ \
       --pretrain_model_path  ../pretrain_model/bert-base-chinese/ \
-      --output_dir ./checkpoint/cnn_model/ \
-      --best_dir ./checkpoint/cnn_model/best_model/ \
-      --predict_dir ./checkpoint/cnn_model/predict/ \
+      --output_dir ./checkpoint/rcnn_model/ \
+      --best_dir ./checkpoint/rcnn_model/best_model/ \
+      --predict_dir ./checkpoint/rcnn_model/predict/ \
       --max_seq_length 128 \
       --do_test \
       --evaluate_during_training \
