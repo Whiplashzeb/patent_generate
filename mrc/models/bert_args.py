@@ -4,6 +4,13 @@ def get_args():
     parser = argparse.ArgumentParser(description="base bert")
 
     parser.add_argument(
+        "--model_name",
+        default=None,
+        type=str,
+        required=True,
+        help="model name"
+    )
+    parser.add_argument(
         "--pretrain_model_path",
         default=None,
         type=str,

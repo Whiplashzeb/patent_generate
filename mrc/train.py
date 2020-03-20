@@ -1,4 +1,5 @@
 from models.BertMRC import BertMRC
+from models.BertBiDAF import BertBiDAF
 from models import bert_args
 from utils import load_and_cache_examples, train, set_seed
 import logging
@@ -9,7 +10,6 @@ import torch
 from transformers import BertConfig, BertTokenizer
 
 logger = logging.getLogger(__name__)
-
 
 if __name__ == "__main__":
     args = bert_args.get_args()
@@ -42,7 +42,10 @@ if __name__ == "__main__":
     # load pretrain model and tokenizer
     config = BertConfig.from_pretrained(args.pretrain_model_path)
     tokenizer = BertTokenizer.from_pretrained(args.pretrain_model_path, do_lower_case=False)
-    model = BertMRC.from_pretrained(args.pretrain_model_path, config=config)
+    if args.model_name == "bertmrc":
+        model = BertMRC.from_pretrained(args.pretrain_model_path, config=config)
+    elif args.model_name == "bertbidaf":
+        model = BertBiDAF.from_pretrained(args.pretrain_model_path, config=config, rnn_hidden_size=128, dropout=0.2)
     model.to(args.device)
 
     logger.info("Training parameters $s", args)
@@ -51,6 +54,3 @@ if __name__ == "__main__":
         train_dataset = load_and_cache_examples(args, logger, tokenizer, "train", False)
         global_step, tr_loss, best_f1 = train(args, logger, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s, best f1 = %s", global_step, tr_loss, best_f1)
-    
-        
-
